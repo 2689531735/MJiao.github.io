@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>中英配对游戏 - 编程数据类型</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Comic Sans MS', 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+        
+        .header {
+            text-align: center;
+            margin: 20px 0 30px;
+            width: 100%;
+        }
+        
+        h1 {
+            font-size: 3.2rem;
+            color: #6a11cb;
+            text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.2);
+            background: linear-gradient(to right, #6a11cb, #2575fc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 15px;
+            padding: 10px;
+            border-radius: 15px;
+            display: inline-block;
+            position: relative;
+        }
+        
+        h1::after {
+            content: "";
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80%;
+            height: 4px;
+            background: linear-gradient(to right, #ff9a9e, #fad0c4);
+            border-radius: 2px;
+        }
+        
+        .game-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            max-width: 900px;
+            margin-bottom: 25px;
+            background: rgba(255, 255, 255, 0.8);
+            padding: 15px 25px;
+            border-radius: 15px;
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .score-container {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #5a3d5c;
+        }
+        
+        #score {
+            color: #6a11cb;
+            font-size: 2.2rem;
+            background: white;
+            padding: 5px 15px;
+            border-radius: 10px;
+            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .controls {
+            display: flex;
+            gap: 15px;
+        }
+        
+        button {
+            background: linear-gradient(to right, #6a11cb, #2575fc);
+            border: none;
+            padding: 12px 25px;
+            border-radius: 30px;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 1.1rem;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        button:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.3);
+        }
+        
+        button:active {
+            transform: translateY(0);
+        }
+        
+        .game-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 20px;
+            width: 100%;
+            max-width: 1000px;
+            margin: 0 auto 30px;
+            perspective: 1000px;
+        }
+        
+        .card {
+            height: 200px;
+            background: linear-gradient(145deg, #ffffff, #f0f0f0);
+            border-radius: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.8rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            transform-style: preserve-3d;
+            position: relative;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+            text-align: center;
+            padding: 20px 15px;
+            user-select: none;
+            overflow: hidden;
+            color: #4a2c6d;
+        }
+        
+        .card::before {
+            content: "";
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0) 70%);
+            transform: rotate(30deg);
+            pointer-events: none;
+        }
+        
+        .card:hover {
+            transform: translateY(-12px) rotateX(8deg) rotateY(8deg);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+        }
+        
+        .card.selected {
+            transform: translateY(-8px) scale(1.03);
+            box-shadow: 0 15px 30px rgba(106, 17, 203, 0.3);
+            background: linear-gradient(145deg, #f0e6ff, #e0d2ff);
+        }
+        
+        .card.matched {
+            visibility: hidden;
+            opacity: 0;
+            transform: scale(0);
+            transition: all 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        
+        .card.wrong {
+            animation: shake 0.6s;
+            background: linear-gradient(145deg, #ffebee, #ffcdd2);
+        }
+        
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-8px); }
+            40%, 80% { transform: translateX(8px); }
+        }
+        
+        .card-icon {
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+            color: #ff7eb3;
+            opacity: 0.9;
+            transition: all 0.3s ease;
+        }
+        
+        .card-text {
+            transition: all 0.3s ease;
+        }
+        
+        .message {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0.9);
+            background: linear-gradient(145deg, #ffffff, #f9f9f9);
+            padding: 25px 40px;
+            border-radius: 20px;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.25);
+            z-index: 1000;
+            text-align: center;
+            font-size: 1.8rem;
+            display: none;
+            opacity: 0;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            border: 3px solid #fff;
+            max-width: 90%;
+        }
+        
+        .message.show {
+            display: block;
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1);
+        }
+        
+        .message i {
+            font-size: 3.5rem;
+            margin-bottom: 15px;
+            display: block;
+        }
+        
+        #correct-message i {
+            color: #4CAF50;
+        }
+        
+        #wrong-message i {
+            color: #F44336;
+        }
+        
+        .celebration {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.9);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            z-index: 999;
+            display: none;
+            opacity: 0;
+            transition: opacity 0.8s ease;
+        }
+        
+        .celebration.show {
+            display: flex;
+            opacity: 1;
+        }
+        
+        .celebration h2 {
+            font-size: 4rem;
+            color: #6a11cb;
+            margin-bottom: 25px;
+            text-align: center;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+            background: linear-gradient(to right, #6a11cb, #2575fc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .celebration p {
+            font-size: 2.5rem;
+            margin-bottom: 35px;
+            color: #5a3d5c;
+        }
+        
+        #final-score {
+            font-size: 3rem;
+            color: #6a11cb;
+            background: white;
+            padding: 10px 30px;
+            border-radius: 15px;
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15);
+        }
+        
+        .confetti {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            animation: fall 4s linear infinite;
+            z-index: -1;
+        }
+        
+        @keyframes fall {
+            0% { 
+                transform: translateY(-100px) rotate(0deg); 
+                opacity: 1;
+            }
+            100% { 
+                transform: translateY(100vh) rotate(360deg); 
+                opacity: 0;
+            }
+        }
+        
+        footer {
+            margin-top: auto;
+            padding: 20px;
+            text-align: center;
+            width: 100%;
+            color: #5a3d5c;
+            font-size: 1.1rem;
+        }
+        
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2.5rem;
+            }
+            
+            .game-container {
+                grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+                gap: 15px;
+            }
+            
+            .card {
+                height: 180px;
+                font-size: 1.6rem;
+            }
+            
+            .game-info {
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .celebration h2 {
+                font-size: 3rem;
+            }
+            
+            .celebration p {
+                font-size: 2rem;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .game-container {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 12px;
+            }
+            
+            .card {
+                height: 160px;
+                font-size: 1.4rem;
+                padding: 15px 10px;
+            }
+            
+            .card-icon {
+                font-size: 1.3rem;
+                margin-bottom: 10px;
+            }
+            
+            button {
+                padding: 10px 20px;
+                font-size: 1rem;
+            }
+            
+            .score-container {
+                font-size: 1.5rem;
+            }
+            
+            #score {
+                font-size: 1.8rem;
+            }
+            
+            .message {
+                font-size: 1.5rem;
+                padding: 20px 30px;
+            }
+            
+            .celebration h2 {
+                font-size: 2.2rem;
+            }
+            
+            .celebration p {
+                font-size: 1.6rem;
+            }
+            
+            #final-score {
+                font-size: 2.2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1><i class="fas fa-gamepad"></i> 中英配对游戏 - 编程数据类型</h1>
+    </div>
+    
+    <div class="game-info">
+        <div class="score-container">
+            <i class="fas fa-star"></i> 当前得分: <span id="score">0</span>
+        </div>
+        <div class="controls">
+            <button id="start-btn"><i class="fas fa-play"></i> 开始游戏</button>
+            <button id="reset-btn"><i class="fas fa-redo"></i> 重新开始</button>
+        </div>
+    </div>
+    
+    <div class="game-container" id="game-board">
+        <!-- 卡片将通过JavaScript动态生成 -->
+    </div>
+    
+    <div class="message" id="correct-message">
+        <i class="fas fa-check-circle"></i>
+        <p>恭喜答对！+10分</p>
+    </div>
+    
+    <div class="message" id="wrong-message">
+        <i class="fas fa-times-circle"></i>
+        <p>配对错误！-5分</p>
+    </div>
+    
+    <div class="celebration" id="celebration">
+        <h2><i class="fas fa-trophy"></i> 恭喜完成所有配对！</h2>
+        <p>你的最终得分: <span id="final-score">0</span></p>
+        <button id="play-again-btn"><i class="fas fa-redo"></i> 再玩一次</button>
+    </div>
+    
+    <footer>
+        <p>© 2025 小图灵编程 | 编程数据类型配对小游戏</p>
+    </footer>
+
+    <script>
+        // 可用图标列表
+        const icons = [
+            "<i class='fas fa-hashtag'></i>",
+            "<i class='fas fa-font'></i>",
+            "<i class='fas fa-water'></i>",
+            "<i class='fas fa-tachometer-alt'></i>",
+            "<i class='fas fa-long-arrow-alt-right'></i>",
+            "<i class='fas fa-check-double'></i>",
+            "<i class='fas fa-code'></i>",
+            "<i class='fas fa-calculator'></i>",
+            "<i class='fas fa-superscript'></i>",
+            "<i class='fas fa-infinity'></i>",
+            "<i class='fas fa-equals'></i>",
+            "<i class='fas fa-percentage'></i>",
+            "<i class='fas fa-brackets-curly'></i>",
+            "<i class='fas fa-database'></i>",
+            "<i class='fas fa-binary'></i>",
+            "<i class='fas fa-square-root-alt'></i>",
+            "<i class='fas fa-cubes'></i>",
+            "<i class='fas fa-shapes'></i>"
+        ];
+        
+        const wordPairs = [
+            { chinese: "整型", english: "int" },
+            { chinese: "字符型", english: "char" },
+            { chinese: "单精度浮点型", english: "float" },
+            { chinese: "双精度浮点型", english: "double" },
+            { chinese: "长长整型", english: "long long" },
+            { chinese: "布尔型", english: "bool" }
+        ];
+        
+        let cards = [];
+        let selectedCards = [];
+        let score = 0;
+        let matchedPairs = 0;
+        let gameStarted = false;
+        
+        const gameBoard = document.getElementById('game-board');
+        const startBtn = document.getElementById('start-btn');
+        const resetBtn = document.getElementById('reset-btn');
+        const playAgainBtn = document.getElementById('play-again-btn');
+        const scoreDisplay = document.getElementById('score');
+        const finalScoreDisplay = document.getElementById('final-score');
+        const correctMessage = document.getElementById('correct-message');
+        const wrongMessage = document.getElementById('wrong-message');
+        const celebration = document.getElementById('celebration');
+        
+        // 初始化游戏
+        function initGame() {
+            gameBoard.innerHTML = '';
+            cards = [];
+            selectedCards = [];
+            score = 0;
+            matchedPairs = 0;
+            scoreDisplay.textContent = '0';
+            
+            // 创建卡片数组
+            const allWords = [];
+            
+            // 为每个词语创建卡片
+            wordPairs.forEach(pair => {
+                allWords.push({ 
+                    text: pair.chinese, 
+                    type: 'chinese', 
+                    pairId: pair.chinese
+                });
+                allWords.push({ 
+                    text: pair.english, 
+                    type: 'english', 
+                    pairId: pair.chinese
+                });
+            });
+            
+            // 打乱卡片顺序
+            shuffleArray(allWords);
+            
+            // 为每张卡片随机分配图标（完全独立）
+            allWords.forEach(word => {
+                const randomIndex = Math.floor(Math.random() * icons.length);
+                word.icon = icons[randomIndex];
+            });
+            
+            // 创建卡片元素
+            allWords.forEach((word, index) => {
+                const card = document.createElement('div');
+                card.className = 'card';
+                card.dataset.index = index;
+                card.dataset.type = word.type;
+                card.dataset.pairId = word.pairId;
+                
+                card.innerHTML = `
+                    <div class="card-icon">${word.icon}</div>
+                    <div class="card-text">${word.text}</div>
+                `;
+                
+                card.addEventListener('click', handleCardClick);
+                
+                gameBoard.appendChild(card);
+                cards.push({
+                    element: card,
+                    type: word.type,
+                    pairId: word.pairId,
+                    matched: false
+                });
+            });
+            
+            gameStarted = true;
+        }
+        
+        // 处理卡片点击
+        function handleCardClick() {
+            if (!gameStarted || selectedCards.length >= 2) return;
+            
+            const index = parseInt(this.dataset.index);
+            const card = cards[index];
+            
+            // 忽略已匹配或已选中的卡片
+            if (card.matched || selectedCards.includes(index)) return;
+            
+            // 选中卡片
+            this.classList.add('selected');
+            selectedCards.push(index);
+            
+            // 检查是否配对
+            if (selectedCards.length === 2) {
+                const card1 = cards[selectedCards[0]];
+                const card2 = cards[selectedCards[1]];
+                
+                // 检查是否是中文和英文的配对
+                if (card1.type !== card2.type && card1.pairId === card2.pairId) {
+                    // 配对成功
+                    setTimeout(() => {
+                        card1.matched = true;
+                        card2.matched = true;
+                        card1.element.classList.add('matched');
+                        card2.element.classList.add('matched');
+                        
+                        score += 10;
+                        scoreDisplay.textContent = score;
+                        matchedPairs++;
+                        
+                        showMessage(correctMessage);
+                        
+                        selectedCards = [];
+                        
+                        // 检查游戏是否结束
+                        if (matchedPairs === wordPairs.length) {
+                            endGame();
+                        }
+                    }, 600);
+                } else {
+                    // 配对失败
+                    setTimeout(() => {
+                        card1.element.classList.add('wrong');
+                        card2.element.classList.add('wrong');
+                        
+                        score = Math.max(0, score - 5);
+                        scoreDisplay.textContent = score;
+                        
+                        showMessage(wrongMessage);
+                        
+                        setTimeout(() => {
+                            card1.element.classList.remove('selected', 'wrong');
+                            card2.element.classList.remove('selected', 'wrong');
+                            selectedCards = [];
+                        }, 1200);
+                    }, 600);
+                }
+            }
+        }
+        
+        // 显示消息
+        function showMessage(element) {
+            element.classList.add('show');
+            setTimeout(() => {
+                element.classList.remove('show');
+            }, 1500);
+        }
+        
+        // 结束游戏
+        function endGame() {
+            finalScoreDisplay.textContent = score;
+            celebration.classList.add('show');
+            createConfetti();
+        }
+        
+        // 创建庆祝彩花
+        function createConfetti() {
+            const colors = ['#6a11cb', '#2575fc', '#4CAF50', '#FFC107', '#F44336', '#9C27B0'];
+            
+            for (let i = 0; i < 150; i++) {
+                const confetti = document.createElement('div');
+                confetti.className = 'confetti';
+                confetti.style.left = Math.random() * 100 + 'vw';
+                confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                confetti.style.animationDuration = (Math.random() * 3 + 3) + 's';
+                confetti.style.animationDelay = Math.random() * 2 + 's';
+                confetti.style.width = (Math.random() * 12 + 6) + 'px';
+                confetti.style.height = (Math.random() * 12 + 6) + 'px';
+                
+                celebration.appendChild(confetti);
+            }
+        }
+        
+        // 打乱数组顺序
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+        
+        // 事件监听
+        startBtn.addEventListener('click', initGame);
+        resetBtn.addEventListener('click', initGame);
+        playAgainBtn.addEventListener('click', () => {
+            celebration.classList.remove('show');
+            celebration.innerHTML = `
+                <h2><i class="fas fa-trophy"></i> 恭喜完成所有配对！</h2>
+                <p>你的最终得分: <span id="final-score">0</span></p>
+                <button id="play-again-btn"><i class="fas fa-redo"></i> 再玩一次</button>
+            `;
+            document.getElementById('play-again-btn').addEventListener('click', () => {
+                celebration.classList.remove('show');
+                initGame();
+            });
+            initGame();
+        });
+        
+        // 初始加载时显示游戏说明
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                alert("欢迎来到中英配对游戏！\n\n游戏规则：\n1. 点击卡片选择中文和对应的英文配对\n2. 配对成功得10分\n3. 配对错误扣5分\n4. 全部配对完成游戏结束\n\n点击'开始游戏'按钮开始吧！");
+            }, 500);
+        });
+    </script>
+</body>
+</html>
